@@ -1,0 +1,53 @@
+<head>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <script src="//unpkg.com/globe.gl"></script>
+    <!--  <script src="../../dist/globe.gl.js"></script>-->
+</head>
+
+<body>
+    <div id="globeViz"></div>
+
+    <script>
+
+        const OPACITY = 0.3;
+
+        const start = { "lat": 54.342554, 'lon': 10.408837 }
+
+        const myGlobe = Globe()
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+            (document.getElementById('globeViz'))
+            .pointAltitude('size')
+            .pointColor('color')
+            .arcLabel(d => `${d.ip}`)
+            .arcStartLat(start.lat)
+            .arcStartLng(start.lon)
+            .arcEndLat(d => d.lat)
+            .arcEndLng(d => d.lon)
+
+            .arcDashLength(0.25)
+            .arcDashGap(1)
+            .arcDashInitialGap(() => Math.random())
+            .arcDashAnimateTime(4000)
+            .arcColor(d => [`rgba(0, 255, 0, ${OPACITY})`, `rgba(255, 0, 0, ${OPACITY})`])
+            .arcsTransitionDuration(0)
+
+
+       
+        fetch('http://localhost:8080/results')
+            .then(res => res.json())
+            .then(data => {
+                console.log(data)
+                myGlobe.arcsData(data)
+            });
+
+        // Add auto-rotation
+        myGlobe.controls().autoRotate = true;
+        myGlobe.controls().autoRotateSpeed = 0.6;
+
+    </script>
+</body>
