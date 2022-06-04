@@ -1,0 +1,145 @@
+---
+- hosts: all
+  become: true
+  vars:
+    home:
+      # Defaults to Kiel, Germany - not my actual home address
+      # Change this to your coordinates
+      lat: 54.3109861
+      lon: 10.1296693
+
+    listen_port: 5555                               # This is where the connections exporter will listen
+    listen_address: "192.168.0.11"                  # This is the address to bind the exporter to
+    ip_info_access_token: '12334456789'             # This is your https://ipinfo.io/ API token
+    routerboard_address: '192.168.0.1'              # This is your Mikrotik device to monitor
+    routerboard_user: 'Test'                        # This is user used to authenticate against the Mikrotik API
+    routerboard_password: 'top-secret'              # This is password used to authenticate against the Mikrotik API
+    routerboard_use_ssl: false
+    routerboard_ssl_certificate_verify: false
+    routerboard_ssl_certificate_path:
+    routerboard_port:
+
+  roles:
+    - role: geerlingguy.nginx
+      vars:
+        nginx_vhosts:
+          - listen: "80"
+            server_name: ""
+            root: "/var/www/mktvis"
+            index: "index.html"
+            state: "present"
+        nginx_extra_conf_options:
+
+  tasks:
+    - name: Ensure group "mktvis" exists
+      ansible.builtin.group:
+        name: mktvis
+        state: present
+
+    - name: Add the user 'mktvis'
+      ansible.builtin.user:
+        name: mktvis
+        create_home: false
+        group: mktvis
+
+    - name: Create dir /var/www/mktvis
+      ansible.builtin.file:
+        path: /var/www/mktvis
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Template html file to /var/www/mktvis/index.html
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/mktvis/index.html
+        owner: mktvis
+        group: mktvis
+        mode: "u=rw,g=r,o=r"
+
+    - name: Copy the Python module for the Mikrotik exporter
+      copy:
+        src: ../mktvis/
+        dest: /var/opt/mktvis/mktvis
+        owner: mktvis
+        group: mktvis
+        mode: '0644'
+
+    - name: Copy the Python main.py
+      copy:
+        src: ../main.py
+        dest: /var/opt/mktvis/main.py
+        owner: mktvis
+        group: mktvis
+        mode: '0755'
+
+    - name: Install virtualenv
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - virtualenv
+        - python3.9
+
+    - name: Install requirements
+      pip:
+        name:
+          - "RouterOS-api==0.17.0"
+          - "ipinfo==4.2.1"
+          - "pyyaml==6.0"
+        virtualenv: /var/opt/mktvis/venv
+        virtualenv_python: python3.9
+
+
+    - name: Create the mktvis exporter config directory
+      ansible.builtin.file:
+        path: /etc/mktvis
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Template mktvis config file to /etc/mktvis/config.yml
+      ansible.builtin.template:
+        src: templates/config.yml.j2
+        dest: /etc/mktvis/config.yml
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create the mktvis service file
+      template:
+        src: templates/mktvis.service.j2
+        dest: /etc/systemd/system/mktvis.service
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Start the mktvis service
+      service:
+        name: mktvis.service
+        state: started
+        enabled: true
+
+    - name: Restart mktvis service
+      ansible.builtin.systemd:
+        name: mktvis.service
+        state: restarted
+        daemon_reload: true
+
+    - name: Check whether ufw status is active
+      shell: which ufw && ufw status
+      changed_when: false
+      ignore_errors: true
+      register: ufw_check
+
+    - name: Allow required ports if ufw is enabled
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      when: "ufw_check.rc != 1 and 'inactive' not in ufw_check.stdout"
+      with_items:
+        - "{{ listen_port }}"
+        - "80"

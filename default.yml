@@ -1,8 +1,0 @@
-ip_info_access_token: 'foo'
-routerboard_address: '192.168.0.1'
-routerboard_user: 'Test'
-routerboard_password: 'top-secret'
-routerboard_use_ssl: false
-routerboard_ssl_certificate_verify: false
-routerboard_ssl_certificate_path:
-routerboard_port:

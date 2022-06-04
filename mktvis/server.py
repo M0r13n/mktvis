@@ -1,22 +1,27 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import typing
 
 from urllib.parse import parse_qs, urlparse
 
-from mktvis.collector import COLLECTOR
+from mktvis.collector import COLLECTOR, ConnectionsCollector
 
 
-def _encode_json(json_dict):
+_HTTP_ANSWER = typing.Tuple[str, typing.List[typing.Tuple[str, str]], bytes]
+
+
+def _encode_json(json_dict: typing.Any) -> bytes:
     string = json.dumps(json_dict)
     return string.encode('utf-8')
 
-def _bake_output(collector):
+
+def _bake_output(collector: ConnectionsCollector) -> _HTTP_ANSWER:
     """Bake output for metrics output."""
 
     headers = [
-        ('Content-Type', 'application/json'), 
-        ('Access-Control-Allow-Origin', '*'), 
-        ]
+        ('Content-Type', 'application/json'),
+        ('Access-Control-Allow-Origin', '*'),
+    ]
 
     response = collector.collect()
     output = _encode_json(response)
@@ -46,7 +51,11 @@ class MetricsHandler(BaseHTTPRequestHandler):
 class ExportProcessor:
 
     @staticmethod
-    def run(server_class=HTTPServer, handler_class=MetricsHandler, port=None):
+    def run(
+        server_class: typing.Type[ThreadingHTTPServer] = ThreadingHTTPServer,
+        handler_class: typing.Type[MetricsHandler] = MetricsHandler,
+        port: int = 5555
+    ) -> None:
         server_address = ('', port)
         httpd = server_class(server_address, handler_class)
         httpd.serve_forever()

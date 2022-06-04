@@ -6,7 +6,7 @@
     </style>
 
     <script src="//unpkg.com/globe.gl"></script>
-    <!--  <script src="../../dist/globe.gl.js"></script>-->
+
 </head>
 
 <body>
@@ -14,22 +14,22 @@
 
     <script>
 
-        const OPACITY = 0.3;
+        const OPACITY = 0.5;
 
-        const start = { "lat": 54.342554, 'lon': 10.408837 }
+        const start = { "lat": {{ home.lat }}, 'lon': {{ home.lon }} }
 
         const myGlobe = Globe()
             .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
             (document.getElementById('globeViz'))
             .pointAltitude('size')
             .pointColor('color')
-            .arcLabel(d => `${d.ip}`)
+            .arcLabel(d => `${d.ip}: ${d.org} &#8594; ${d.city}`)
             .arcStartLat(start.lat)
             .arcStartLng(start.lon)
             .arcEndLat(d => d.lat)
             .arcEndLng(d => d.lon)
 
-            .arcDashLength(0.25)
+            .arcDashLength(0.5)
             .arcDashGap(1)
             .arcDashInitialGap(() => Math.random())
             .arcDashAnimateTime(4000)
@@ -37,13 +37,19 @@
             .arcsTransitionDuration(0)
 
 
-       
-        fetch('http://localhost:8080/results')
-            .then(res => res.json())
-            .then(data => {
-                console.log(data)
-                myGlobe.arcsData(data)
-            });
+        function fetchConnections() {
+            fetch('http://{{ listen_address }}:{{ listen_port }}/results')
+                .then(res => res.json())
+                .then(data => {
+                    myGlobe.arcsData(data);
+                });
+        }
+
+        fetchConnections()
+        setInterval(function () {
+            fetchConnections()
+        }, 30000)
+
 
         // Add auto-rotation
         myGlobe.controls().autoRotate = true;

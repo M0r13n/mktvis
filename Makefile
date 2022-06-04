@@ -1,8 +1,9 @@
-run_tests:
-	pytest --cov=mktvis tests/
-
 flake:
-	flake8
+	flake8 ./mktvis
+
+ansible_lint:
+	yamllint ./setup
+	ansible-lint ./setup
 
 .PHONY: build
 build:
@@ -12,7 +13,7 @@ check-build:
 	twine check dist/*
 
 type-check:
-	mypy ./mktvis
+	mypy --install-types ./mktvis
 
 clean:
 	rm -rf .mypy_cache
@@ -21,8 +22,12 @@ clean:
 	rm coverage.xml
 	rm .coverage
 
-test: run_tests flake type-check
+test: flake type-check ansible_lint
 
 install:
 	pip install wheel
 	pip install -U .[dev]
+	pip install -U yamllint ansible-lint ansible
+
+run:
+	python main.py

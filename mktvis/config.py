@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 import pathlib
 import typing
 import yaml
@@ -11,15 +10,25 @@ _KEYS = (
     'routerboard_use_ssl',
     'routerboard_ssl_certificate_verify',
     'routerboard_ssl_certificate_path',
-    'routerboard_port'
+    'routerboard_port',
+    'listen_port'
 )
 
 
 class UnknownConfigurationKeyError(Exception):
     """Raised when the config loader encounters an unknown key"""
 
-    def __init__(self, key: str):
+    def __init__(self, key: str) -> None:
         super().__init__(f'Unknown configuration key \'{key}\'')
+
+        self.key = key
+
+
+class MissingConfigurationKey(Exception):
+    """Raised when the config has missing required keys"""
+
+    def __init__(self, key: str) -> None:
+        super().__init__(f'Missing configuration key \'{key}\'')
 
         self.key = key
 
@@ -43,6 +52,8 @@ def is_atomic(val: typing.Any) -> bool:
 
 class MKTVISConfig:
 
+    LISTEN_PORT: int
+
     IP_INFO_ACCESS_TOKEN: str
 
     ROUTERBOARD_ADDRESS: str
@@ -55,6 +66,14 @@ class MKTVISConfig:
 
     def __init__(self, key_value_dict: typing.Dict[str, typing.Any]) -> None:
         self._key_value_dict = key_value_dict
+
+        missing = self.missing_keys
+        if missing:
+            raise MissingConfigurationKey(missing.pop())
+
+    @property
+    def missing_keys(self) -> typing.Set[str]:
+        return set(_KEYS).difference(set(self._key_value_dict.keys()))
 
     def __str__(self) -> str:
         return str(self._key_value_dict)

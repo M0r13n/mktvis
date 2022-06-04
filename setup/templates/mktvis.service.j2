@@ -1,0 +1,32 @@
+
+[Unit]
+Description=Python mktvis exporter
+
+
+[Service]
+Type=simple
+ExecStart=/var/opt/mktvis/venv/bin/python3 /var/opt/mktvis/main.py
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+DevicePolicy=closed
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+MemoryDenyWriteExecute=yes
+LockPersonality=yes
+
+# Use a dedicated user to run our service
+User=mktvis
+
+[Install]
+WantedBy=default.target
