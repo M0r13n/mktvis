@@ -23,7 +23,7 @@ setuptools.setup(
     python_requires='>=3.7',
     install_requires=[
         "RouterOS-api==0.17.0",
-        "ipinfo==4.2.1",
+        "geoip2==4.5.0",
         "pyyaml==6.0",
     ],
     extras_require={

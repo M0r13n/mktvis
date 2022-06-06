@@ -3,7 +3,7 @@ import typing
 import yaml
 
 _KEYS = (
-    'ip_info_access_token',
+    'maxmind_license_key',
     'routerboard_address',
     'routerboard_user',
     'routerboard_password',
@@ -11,7 +11,10 @@ _KEYS = (
     'routerboard_ssl_certificate_verify',
     'routerboard_ssl_certificate_path',
     'routerboard_port',
-    'listen_port'
+    'listen_port',
+    'city_db_path',
+    'asn_db_path',
+
 )
 
 
@@ -54,8 +57,6 @@ class MKTVISConfig:
 
     LISTEN_PORT: int
 
-    IP_INFO_ACCESS_TOKEN: str
-
     ROUTERBOARD_ADDRESS: str
     ROUTERBOARD_PORT: str
     ROUTERBOARD_USER: str
@@ -63,6 +64,9 @@ class MKTVISConfig:
     ROUTERBOARD_USE_SSL: str
     ROUTERBOARD_SSL_CERTIFICATE_VERIFY: str
     ROUTERBOARD_SSL_CERTIFICATE_PATH: str
+
+    CITY_DB_PATH: str
+    ASN_DB_PATH: str
 
     def __init__(self, key_value_dict: typing.Dict[str, typing.Any]) -> None:
         self._key_value_dict = key_value_dict

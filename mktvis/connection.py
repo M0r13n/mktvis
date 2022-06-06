@@ -1,29 +1,48 @@
+import abc
 import ssl
 import typing
-import ipinfo
+import geoip2.database
 import routeros_api
 
 from mktvis.config import MKTVISConfig
 
+BC = typing.TypeVar('BC', bound='BaseConnection')
 
-class IPInfoConnection:
 
-    def __init__(self, access_token: str) -> None:
-        self._access_token = access_token
-        self._handler = ipinfo.getHandler(access_token)
+class BaseConnection(metaclass=abc.ABCMeta):
+
+    def __enter__(self) -> 'BaseConnection':
+        return self
+
+    def __exit__(self, *args: typing.Any) -> None:
+        self.close()
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        pass
 
     @classmethod
-    def from_config(cls, config: MKTVISConfig) -> 'IPInfoConnection':
-        return cls(
-            config.IP_INFO_ACCESS_TOKEN
-        )
-
-    @property
-    def ipinfo_api(self) -> ipinfo.Handler:
-        return self._handler
+    @abc.abstractmethod
+    def from_config(cls: typing.Type[BC], config: MKTVISConfig) -> BC:
+        pass
 
 
-class RouterConnection:
+class MaxMindDatabaseConnection(BaseConnection):
+
+    def __init__(self, city_db_path: str, asn_db_path: str) -> None:
+        self.city_reader = geoip2.database.Reader(city_db_path)
+        self.asn_reader = geoip2.database.Reader(asn_db_path)
+
+    @classmethod
+    def from_config(cls, config: MKTVISConfig) -> 'MaxMindDatabaseConnection':
+        return cls(config.CITY_DB_PATH, config.ASN_DB_PATH)
+
+    def close(self) -> None:
+        self.city_reader.close()
+        self.asn_reader.close()
+
+
+class RouterConnection(BaseConnection):
 
     def __init__(self, host: str, username: str, password: str, port: typing.Union[str, int] = 8728,
                  use_ssl: bool = False, ssl_verify: bool = True,
@@ -65,3 +84,6 @@ class RouterConnection:
     @property
     def router_api(self) -> routeros_api.RouterOsApiPool:
         return self._api
+
+    def close(self) -> None:
+        del self._api

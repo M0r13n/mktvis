@@ -10,7 +10,7 @@
 
     listen_port: 5555                               # This is where the connections exporter will listen
     listen_address: "192.168.0.11"                  # This is the address to bind the exporter to
-    ip_info_access_token: '12334456789'             # This is your https://ipinfo.io/ API token
+
     routerboard_address: '192.168.0.1'              # This is your Mikrotik device to monitor
     routerboard_user: 'Test'                        # This is user used to authenticate against the Mikrotik API
     routerboard_password: 'top-secret'              # This is password used to authenticate against the Mikrotik API
@@ -18,6 +18,11 @@
     routerboard_ssl_certificate_verify: false
     routerboard_ssl_certificate_path:
     routerboard_port:
+
+    maxmind_license_key: '1234'
+    city_db_path: /var/opt/mktvis/GeoLite2-City.mmdb
+    asn_db_path: /var/opt/mktvis/GeoLite2-ASN.mmdb
+
 
   roles:
     - role: geerlingguy.nginx
@@ -86,7 +91,7 @@
       pip:
         name:
           - "RouterOS-api==0.17.0"
-          - "ipinfo==4.2.1"
+          - "geoip2==4.5.0"
           - "pyyaml==6.0"
         virtualenv: /var/opt/mktvis/venv
         virtualenv_python: python3.9
@@ -107,6 +112,47 @@
         owner: root
         group: root
         mode: '0755'
+
+    - name: Download GeoLite2 free databases
+      get_url:
+        url: "https://download.maxmind.com/app/geoip_download?edition_id={{ item }}\
+              &license_key={{ maxmind_license_key }}&suffix=tar.gz"
+        dest: "/tmp/{{ item }}.tar.gz"
+        mode: '0440'
+      with_items:
+        - GeoLite2-ASN
+        - GeoLite2-City
+
+    - name: Create dir /tmp/maxmind/
+      ansible.builtin.file:
+        path: /tmp/maxmind
+        state: directory
+        owner: mktvis
+        group: mktvis
+        mode: '0644'
+
+    - name: Extract GeoLite2 databases
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ item }}.tar.gz"
+        dest: /tmp/maxmind/
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+      with_items:
+        - GeoLite2-ASN
+        - GeoLite2-City
+
+    - name: Copy database files
+      ansible.builtin.copy:
+        src: "/tmp/maxmind/{{ item }}.mmdb"
+        dest: "/var/opt/mktvis/"
+        remote_src: true
+        owner: mktvis
+        group: mktvis
+        mode: '0644'
+      with_items:
+        - GeoLite2-ASN
+        - GeoLite2-City
 
     - name: Create the mktvis service file
       template:

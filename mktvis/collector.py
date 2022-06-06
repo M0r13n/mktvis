@@ -2,8 +2,10 @@
 
 import ipaddress
 import typing
+import geoip2.errors
+import geoip2.models
 
-from mktvis.connection import IPInfoConnection, RouterConnection
+from mktvis.connection import MaxMindDatabaseConnection, RouterConnection
 
 
 def is_private(ip: str) -> bool:
@@ -16,8 +18,24 @@ class GeoIPExporter:
     Utilize the IPInfoConnection in order to collect relevant GeoIP data.
     """
 
-    def __init__(self, conn: IPInfoConnection) -> None:
-        self._ip_info_conn = conn
+    def __init__(self, conn: MaxMindDatabaseConnection) -> None:
+        self.datasource = conn
+
+    def get_city(self, ip: str) -> typing.Optional[geoip2.models.City]:
+        try:
+            city = self.datasource.city_reader.city(ip)
+            return city
+        except geoip2.errors.AddressNotFoundError:
+            pass
+        return None
+
+    def get_asn(self, ip: str) -> typing.Optional[geoip2.models.ASN]:
+        try:
+            asn = self.datasource.asn_reader.asn(ip)
+            return asn
+        except geoip2.errors.AddressNotFoundError:
+            pass
+        return None
 
     def get_batch_data(self, ips: typing.Generator[str, None, None]) -> typing.Dict[str, typing.Any]:
         """
@@ -25,10 +43,23 @@ class GeoIPExporter:
         This method executes a batch request to IPInfo -> single HTTP request.
         Also the IPInfoConnection implements caching by itself (LRU in memory).
         """
-        return typing.cast(
-            typing.Dict[str, typing.Any],
-            self._ip_info_conn.ipinfo_api.getBatchDetails(ips)
-        )
+
+        results = {}
+
+        for ip in ips:
+            city = self.get_city(ip)
+            asn = self.get_asn(ip)
+
+            if city:
+                results[ip] = {
+                    'ip': ip,
+                    'latitude': city.location.latitude,
+                    'longitude': city.location.longitude,
+                    'city': city.city.names['en'] if 'en' in city.city.names else 'n.a.',
+                    'org': asn.autonomous_system_organization if asn else None
+                }
+
+        return results
 
 
 class ConnectionExporter:
@@ -78,7 +109,7 @@ class ConnectionsCollector:
         self._conn_exp: typing.Optional[ConnectionExporter] = None
         self._ip_exp: typing.Optional[GeoIPExporter] = None
 
-    def init(self, router_conn: RouterConnection, ip_info_conn: IPInfoConnection) -> None:
+    def init(self, router_conn: RouterConnection, ip_info_conn: MaxMindDatabaseConnection) -> None:
         """Inject Exporter connections"""
         self._conn_exp = ConnectionExporter(router_conn)
         self._ip_exp = GeoIPExporter(ip_info_conn)
