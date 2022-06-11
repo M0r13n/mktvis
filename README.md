@@ -97,3 +97,10 @@ Adapt `setup/install.yml` to your needs:
 
     maxmind_license_key: '1234'                     # Replace with your MaxMind license key
 ```
+Finally, run the Playbook:
+
+```bash
+pip install -U ansible
+ansible-galaxy install geerlingguy.nginx
+ansible-playbook setup/install.yml -i 192.168.0.11,
+```
