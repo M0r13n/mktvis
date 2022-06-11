@@ -4,7 +4,7 @@ A straightforward Python module to export and visualize open connections from an
 Mikrotik RouterOS device. It gathers open connections through the RouterOS REST API,
 enriches them with geolocation data and visualizes the result on an interactive 3D globe.
 
-![example image](./screen.png)
+![example image](./img/screen.png)
 
 ## Disclaimer
 
@@ -38,9 +38,13 @@ Some connections, on the other hand, have surprised me. For example, I was surpr
 After a short investigation, it turned out that it was the device of a family member. The user is an avid user of the Yandex 
 browser and the associated mail service. His device was permanently connected to the corresponding Yandex services. 
 
+![spotted connection to Yandex](./img/yandex.png)
+
 In addition, I wondered about a connection to Alibaba and ByteDance, which was also constantly open. Since I'm meticulous
 about making sure all IoT devices are on their own offline VLAN, I wondered if I had missed something.
 However, it turned out that these connections were coming from my little sister's smartphone. She has TikTok installed on the device.
+
+![spotted connection to ByteDance](./img/bytedance.png)
 
 So you can definitely get some insights into your own home network.
 
