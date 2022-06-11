@@ -9,10 +9,10 @@
       lon: 10.1296693
 
     listen_port: 5555                               # This is where the connections exporter will listen
-    listen_address: "192.168.0.11"                  # This is the address to bind the exporter to
+    listen_address: "{{ inventory_hostname }}"      # This is the address to bind the exporter to. Defaults to inventory hostname
 
     routerboard_address: '192.168.0.1'              # This is your Mikrotik device to monitor
-    routerboard_user: 'Test'                        # This is user used to authenticate against the Mikrotik API
+    routerboard_user: 'mktvis'                      # This is user used to authenticate against the Mikrotik API
     routerboard_password: 'top-secret'              # This is password used to authenticate against the Mikrotik API
     routerboard_use_ssl: false
     routerboard_ssl_certificate_verify: false
