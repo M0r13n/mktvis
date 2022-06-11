@@ -19,10 +19,35 @@ precautions to not compromise the integrity of your router:
 - choose a secure password
 - secure the device on which the service is running
 
+## What is the purpose ?
+
+One can argue that the added value of this project is limited. Ultimately, this is only a (pretty) visualization of one's IP connections.
+
+But the visualization can be used vividly demonstrate how interconnected modern devices are today. 
+In my family, which does not have a particular affinity for technology, I was able to generate some amazement.
+Evidently, not everyone was aware that our smart helpers are constantly phoning home.
+
+Even though I consider my network relatively clean, there were several dozens of open connections all the time.
+Most of them go to the usual suspects:
+
+- AWS
+- Google / Google Cloud
+- Apple services
+
+Some connections, on the other hand, have surprised me. For example, I was surprised by a connection that went directly to Moscow.
+After a short investigation, it turned out that it was the device of a family member. The user is an avid user of the Yandex 
+browser and the associated mail service. His device was permanently connected to the corresponding Yandex services. 
+
+In addition, I wondered about a connection to Alibaba and ByteDance, which was also constantly open. Since I'm meticulous
+about making sure all IoT devices are on their own offline VLAN, I wondered if I had missed something.
+However, it turned out that these connections were coming from my little sister's smartphone. She has TikTok installed on the device.
+
+So you can definitely get some insights into your own home network.
+
 ## Technology used
 
 - [globe.gl](https://github.com/vasturiano/globe.gl)
-- []MaxMind free Geo IP database(https://www.maxmind.com/en/geoip2-city-accuracy-comparison)
+- [MaxMind free Geo IP database](https://www.maxmind.com/en/geoip2-city-accuracy-comparison)
 
 ## Installation
 
